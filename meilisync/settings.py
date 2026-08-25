@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings
 
 from meilisync.enums import ProgressType, SourceType
@@ -8,11 +8,9 @@ from meilisync.plugin import load_plugin
 
 
 class Source(BaseModel):
+    model_config = ConfigDict(extra="allow")
     type: SourceType
     database: str
-
-    class Config:
-        extra = Extra.allow
 
 
 class MeiliSearch(BaseModel):
@@ -37,6 +35,8 @@ class BasePlugin(BaseModel):
 
 
 class Sync(BasePlugin):
+    """One table (or collection) mapped to a Meilisearch index."""
+
     table: str
     pk: str = "id"
     full: bool = False
@@ -52,10 +52,8 @@ class Sync(BasePlugin):
 
 
 class Progress(BaseModel):
+    model_config = ConfigDict(extra="allow")
     type: ProgressType
-
-    class Config:
-        extra = Extra.allow
 
 
 class Sentry(BaseModel):
@@ -64,6 +62,8 @@ class Sentry(BaseModel):
 
 
 class Settings(BaseSettings, BasePlugin):
+    """Root YAML configuration loaded at process start."""
+
     progress: Progress
     debug: bool = False
     source: Source
@@ -75,7 +75,7 @@ class Settings(BaseSettings, BasePlugin):
     def tables(self):
         return [sync.table for sync in self.sync]
 
-    def get_sync(self, table: str):
+    def get_sync(self, table: str) -> Sync | None:
         for sync in self.sync:
             if sync.table == table:
                 return sync

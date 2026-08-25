@@ -1,0 +1,8 @@
+services:
+  meilisync:
+    image: ghcr.io/astrum-studio/meilisync:latest
+    restart: unless-stopped
+    volumes:
+      - ./config.yml:/app/config.yml:ro
+      - ./data:/app/data
+    working_dir: /app

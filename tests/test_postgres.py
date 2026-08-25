@@ -1,8 +1,11 @@
 import time
 
-import psycopg2
-
+import pytest
 from conftest import client
+
+psycopg2 = pytest.importorskip("psycopg2")
+
+pytestmark = pytest.mark.integration
 
 index = client.index("postgres")
 

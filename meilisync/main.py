@@ -10,7 +10,7 @@ from meilisync.event import EventCollection
 from meilisync.meili import Meili
 from meilisync.schemas import Event
 from meilisync.settings import Settings
-from meilisync.version import __VERSION__
+from meilisync.version import __version__
 
 app = typer.Typer()
 
@@ -65,7 +65,7 @@ def callback(
 
 @app.command(help="Show meilisync version")
 def version():
-    typer.echo(__VERSION__)
+    typer.echo(__version__)
 
 
 @app.command(help="Start meilisync")
@@ -79,7 +79,7 @@ def start(
     progress = context.obj["progress"]
     meili_settings = settings.meilisearch
     collection = EventCollection()
-    lock = None
+    lock = asyncio.Lock()
 
     async def _():
         nonlocal current_progress
@@ -104,6 +104,8 @@ def start(
                 logger.debug(event)
             current_progress = event.progress
             if isinstance(event, Event):
+                if not event.table:
+                    continue
                 sync = settings.get_sync(event.table)
                 if not sync:
                     continue
@@ -133,8 +135,6 @@ def start(
                 logger.error(f"Error when insert data to MeiliSearch: {e}")
 
     async def run():
-        nonlocal lock
-        lock = asyncio.Lock()
         await asyncio.gather(_(), interval())
 
     asyncio.run(run())

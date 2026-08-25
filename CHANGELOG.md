@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Packaging, CI, and documentation
+
+- Build with **uv** + **hatchling**; version is read from `meilisync/version.py` via Hatch.
+- GitHub Actions: lint/typecheck/tests, `uv build`, PyPI trusted publishing, multi-arch GHCR images, MkDocs Material on GitHub Pages.
+- Project docs site, issue/PR templates, and a production Docker image (non-root, all extras).
+
 ## 0.1.5
 
 ### PostgreSQL: fix wal2json 1GB string-buffer crash on large transactions

@@ -1,222 +1,109 @@
 # meilisync
 
-[![image](https://img.shields.io/pypi/v/meilisync.svg?style=flat)](https://pypi.python.org/pypi/meilisync)
-[![image](https://img.shields.io/github/license/meilisync/meilisync)](https://github.com/meilisync/meilisync)
-[![image](https://github.com/meilisync/meilisync/workflows/pypi/badge.svg)](https://github.com/meilisync/meilisync/actions?query=workflow:pypi)
-[![image](https://github.com/meilisync/meilisync/workflows/ci/badge.svg)](https://github.com/meilisync/meilisync/actions?query=workflow:ci)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/meilisync?color=5cc141)](https://github.com/long2ice/meilisync)
+**Realtime sync from PostgreSQL, MySQL, and MongoDB to [Meilisearch](https://www.meilisearch.com/).**
 
-## Introduction
+[![CI](https://github.com/Astrum-Studio/meilisync/actions/workflows/ci.yml/badge.svg)](https://github.com/Astrum-Studio/meilisync/actions/workflows/ci.yml)
+[![Docker](https://github.com/Astrum-Studio/meilisync/actions/workflows/docker.yml/badge.svg)](https://github.com/Astrum-Studio/meilisync/actions/workflows/docker.yml)
+[![Docs](https://github.com/Astrum-Studio/meilisync/actions/workflows/docs.yml/badge.svg)](https://astrum-studio.github.io/meilisync/)
+[![PyPI](https://img.shields.io/pypi/v/meilisync.svg)](https://pypi.org/project/meilisync/)
+[![Python](https://img.shields.io/pypi/pyversions/meilisync.svg)](https://pypi.org/project/meilisync/)
+[![License](https://img.shields.io/github/license/Astrum-Studio/meilisync)](LICENSE)
 
-Realtime sync data from MySQL/PostgreSQL/MongoDB to Meilisearch.
+A maintained fork of [long2ice/meilisync](https://github.com/long2ice/meilisync) by [Astrum Agency](https://astrum.agency). Built for production PostgreSQL: wal2json format 2 (no 1 GB string-buffer crash), table-filtered decoding, and automatic reconnect with LSN resume.
+
+**[Documentation](https://astrum-studio.github.io/meilisync/)** · **[astrum.agency](https://astrum.agency)** · **[Changelog](CHANGELOG.md)** · **[Docker image](https://github.com/Astrum-Studio/meilisync/pkgs/container/meilisync)**
+
+---
+
+## Features
+
+- **CDC, not polling** — PostgreSQL logical replication, MySQL binlog, MongoDB change streams
+- **Full + incremental** — optional backfill when an index is missing, then live updates
+- **Batching** — flush by document count, interval, or both
+- **Index refresh** — rebuild via a tmp index and atomic swap
+- **Plugins** — mutate events before/after they hit Meilisearch
+- **Progress** — file or Redis, so restarts continue from the last cursor
 
 ## Install
 
-Install from pypi:
+```bash
+pip install "meilisync[postgres]"   # PostgreSQL (also the default extra)
+pip install "meilisync[mysql]"      # MySQL
+pip install "meilisync[mongodb]"    # MongoDB
+pip install "meilisync[all]"        # everything
+```
 
-- `pip install meilisync[mysql]` for MySQL.
-- `pip install meilisync[postgres]` for PostgreSQL.
-- `pip install meilisync[mongo]` for MongoDB.
-- `pip install meilisync[all]` for all.
-- `pip install meilisync[redis]` for redis progress.
+Or Docker:
 
-## Use docker (Recommended)
+```bash
+docker pull ghcr.io/astrum-studio/meilisync:latest
+```
 
-You can use docker to run `meilisync`:
+## Quick start
 
 ```yaml
-version: "3"
-services:
-  meilisync:
-    image: long2ice/meilisync
-    volumes:
-      - ./config.yml:/meilisync/config.yml
-    restart: always
-```
-
-## Prerequisites
-
-- `MySQL`: `binlog_format = ROW`, use binary log.
-- `PostgreSQL`: `wal_level = logical` and install `wal2json` extension, use logical replication.
-- `MongoDB`: enable replica set mode, use change stream.
-
-## Quick Start
-
-If you run `meilisync` without any arguments, it will try to load the configuration from `config.yml` in the current
-directory.
-
-```shell
-❯ meilisync --help
-
- Usage: meilisync [OPTIONS] COMMAND [ARGS]...
-
-╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --config              -c      TEXT  Config file path [default: config.yml]                                                                                                         │
-│ --install-completion                Install completion for the current shell.                                                                                                      │
-│ --show-completion                   Show completion for the current shell, to copy it or customize the installation.                                                               │
-│ --help                              Show this message and exit.                                                                                                                    │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Commands ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ check            Check whether the data in the database is consistent with the data in Meilisearch                                                                                 │
-│ refresh          Refresh all data by swap index                                                                                                                                    │
-│ start            Start meilisync                                                                                                                                                   │
-│ version          Show meilisync version                                                                                                                                            │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-```
-
-### Start sync
-
-Start sync data from MySQL to Meilisearch:
-
-```shell
-❯ meilisync start
-2023-03-07 08:37:25.656 | INFO     | meilisync.main:_:86 - Start increment sync data from "mysql" to Meilisearch...
-```
-
-### Refresh sync
-
-Refresh all data by swap index:
-
-```shell
-❯ meilisync refresh -t test
-```
-
-Before refresh, you need stop the sync process first to avoid data inconsistency.
-
-### Check sync
-
-Check whether the data count in the database is consistent with the data in Meilisearch:
-
-```shell
-❯ meilisync check -t test
-
-```
-
-## Configuration
-
-Here is an example configuration file:
-
-```yaml
-debug: true
-plugins:
-  - meilisync.plugin.Plugin
+# config.yml
 progress:
   type: file
+  path: progress.json
 source:
-  type: mysql
-  host: 192.168.123.205
-  port: 3306
-  user: root
-  password: "123456"
-  database: beauty
+  type: postgres
+  host: 127.0.0.1
+  port: 5432
+  user: postgres
+  password: postgres
+  database: app
 meilisearch:
-  api_url: http://192.168.123.205:7700
-  api_key:
+  api_url: http://127.0.0.1:7700
+  api_key: MASTER_KEY
   insert_size: 1000
-  insert_interval: 10
+  insert_interval: 5
 sync:
-  - table: collection
-    index: beauty-collections
-    plugins:
-      - meilisync.plugin.Plugin
+  - table: products
+    index: products
+    pk: id
     full: true
-    fields:
-      id:
-      title:
-      description:
-      category:
-  - table: picture
-    index: beauty-pictures
-    full: true
-    fields:
-      id:
-      description:
-      category:
-sentry:
-  dsn: ""
-  environment: "production"
 ```
 
-### debug (optional)
-
-Enable debug mode, default is `false`, if you want to see more logs, you can set it to `true`.
-
-### plugins (optional)
-
-The plugins are used to customize the data before or after insert to Meilisearch and the plugins is a list of python
-modules.
-
-Which is a python class with `pre_event` and `post_event` methods, the `pre_event` method is called before insert to
-Meilisearch, the `post_event` method is called after insert to Meilisearch.
-
-```python
-class Plugin:
-    is_global = False
-
-    async def pre_event(self, event: Event):
-        logger.debug(f"pre_event: {event}, is_global: {self.is_global}")
-        return event
-
-    async def post_event(self, event: Event):
-        logger.debug(f"post_event: {event}, is_global: {self.is_global}")
-        return event
+```bash
+meilisync start
 ```
 
-The `is_global` is used to indicate whether the plugin instance is global, if set to `True`, the plugin instance will be
-created only once, otherwise, the plugin instance will be created for each event.
+```yaml
+# docker-compose.yml
+services:
+  meilisync:
+    image: ghcr.io/astrum-studio/meilisync:latest
+    restart: unless-stopped
+    volumes:
+      - ./config.yml:/app/config.yml:ro
+      - ./data:/app/data
+```
 
-### progress
+Full configuration, source setup, and CLI: **[docs](https://astrum-studio.github.io/meilisync/)**.
 
-The progress is used to record the last sync position, such as binlog position for MySQL.
+## Commands
 
-- `type`: `file` or `redis`, if set to file, another option `path` is required.
-- `path`: the file path to store the progress, default is `progress.json`.
-- `key`: the redis key to store the progress, default is `meilisync:progress`.
-- `dsn`: the redis dsn, default is `redis://localhost:6379/0`.
+| Command | Purpose |
+| --- | --- |
+| `meilisync start` | Full sync (if needed) + incremental CDC |
+| `meilisync refresh -t TABLE` | Rebuild an index via swap |
+| `meilisync check -t TABLE` | Compare source count vs Meilisearch |
+| `meilisync version` | Print version |
 
-### source
+## Development
 
-Source database configuration, currently only support MySQL and PostgreSQL and MongoDB.
+This repo uses **uv** for environments/lockfile and **hatchling** as the build backend.
 
-- `type`: `mysql` or `postgres` or `mongo`.
-- `server_id`: the server id for MySQL binlog, default is `1`.
-- `database`: the database name.
-- `other keys`: the database connection arguments, MySQL see [asyncmy](https://github.com/long2ice/asyncmy), PostgreSQL
-  see [psycopg2](https://www.psycopg.org/docs/usage.html), MongoDB see [motor](https://motor.readthedocs.io/en/stable/).
+```bash
+uv sync --all-extras --group dev --group docs
+make ci          # lint, typecheck, unit tests
+make docs-serve  # MkDocs Material
+uv build         # sdist + wheel
+```
 
-### meilisearch
-
-Meilisearch configuration.
-
-- `api_url`: the Meilisearch API URL.
-- `api_key`: the Meilisearch API key.
-- `insert_size`: insert after collecting this many documents, optional.
-- `insert_interval`: insert after this many seconds have passed, optional.
-
-If nether `insert_size` nor `insert_interval` is set, it will insert each document immediately.
-
-If you prefer performance, just set and increase `insert_size` and `insert_interval`. The insert will be made as long as
-one of the conditions is met.
-
-### sync
-
-The sync configuration, you can add multiple sync tasks.
-
-- `table`: the database table name or collection name.
-- `index`: the Meilisearch index name, if not set, it will use the table name.
-- `full`: whether to do a full sync, default is `false`.
-- `fields`: the fields to sync, if not set, it will sync all fields. The key is table field name, the value is the
-  Meilisearch field name, if not set, it will use the table field name.
-- `plugins`: the table level plugins, optional.
-
-### sentry (optional)
-
-Sentry configuration.
-
-- `dsn`: the sentry dsn.
-- `environment`: the sentry environment, default is `production`.
+Releases are Git tags (`vX.Y.Z`): PyPI via trusted publishing, GHCR image, GitHub Release. See [Publishing](https://astrum-studio.github.io/meilisync/publishing/).
 
 ## License
 
-This project is licensed under the
-[Apache-2.0](https://github.com/meilisync/meilisync/blob/main/LICENSE) License.
+[Apache-2.0](LICENSE). See [NOTICE](NOTICE) for attribution to the original project.

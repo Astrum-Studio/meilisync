@@ -6,6 +6,8 @@ from meilisync.schemas import Event
 
 
 class Plugin:
+    """Base plugin. Override `pre_event` / `post_event` to transform CDC events."""
+
     is_global = False
 
     async def pre_event(self, event: Event):

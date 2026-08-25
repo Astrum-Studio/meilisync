@@ -12,6 +12,8 @@ class ProgressEvent(BaseModel):
 
 
 class Event(ProgressEvent):
+    """A CDC row event that will be written to Meilisearch."""
+
     type: EventType
     table: str | None = None
     data: dict

@@ -1,0 +1,49 @@
+---
+name: Bug report
+description: Report a bug in meilisync
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report this. Please fill in as much as you can.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source database
+      options:
+        - PostgreSQL
+        - MySQL
+        - MongoDB
+        - Not sure / not database-related
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: meilisync version
+      placeholder: "0.1.5"
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant config (redact secrets)
+      render: yaml
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      render: shell

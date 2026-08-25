@@ -16,7 +16,7 @@ class Meili:
     def __init__(
         self,
         api_url: str,
-        api_key: str,
+        api_key: str | None = None,
         plugins: Optional[List[Union[Type[Plugin], Plugin]]] = None,
         wait_for_task_timeout: Optional[int] = None,
     ):

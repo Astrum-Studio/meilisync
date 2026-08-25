@@ -1,7 +1,7 @@
 import json
+from pathlib import Path
 
 import aiofiles
-import aiofiles.os
 
 from meilisync.enums import ProgressType
 from meilisync.progress import Progress
@@ -18,6 +18,9 @@ class File(Progress):
         self.path = path
 
     async def set(self, **kwargs):
+        parent = Path(self.path).parent
+        if parent != Path(""):
+            parent.mkdir(parents=True, exist_ok=True)
         async with aiofiles.open(self.path, "w") as f:
             await f.write(json.dumps(kwargs))
 

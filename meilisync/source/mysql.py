@@ -1,7 +1,7 @@
 import asyncio
 from typing import List
 
-try:    
+try:
     import asyncmy
     from asyncmy.cursors import DictCursor
     from asyncmy.errors import OperationalError
@@ -13,6 +13,8 @@ try:
     )
 except ImportError as e:
     raise ImportError("asyncmy is not installed to use MySQL source") from e
+
+from loguru import logger
 
 from meilisync.enums import EventType, SourceType
 from meilisync.schemas import Event, ProgressEvent
@@ -32,7 +34,7 @@ class MySQL(Source):
     ):
         super().__init__(progress, tables, **kwargs)
         self.server_id = int(server_id)
-        self.database = kwargs.get("database")
+        self.database = str(kwargs.get("database") or "")
 
     async def get_full_data(self, sync: Sync, size: int):
         if sync.fields:

@@ -1,32 +1,41 @@
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+# syntax=docker/dockerfile:1
 
-RUN groupadd --system --gid 1000 appgroup && \
-    useradd --system --uid 1000 --gid 1000 --home-dir /home/appuser --create-home appuser
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
 
-RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-      curl \
-      ca-certificates \
-      gcc \
-      pkg-config \
-      libffi-dev \
-      make; \
-    rm -rf /var/lib/apt/lists/*
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_HTTP_TIMEOUT=300 \
+    UV_PYTHON_DOWNLOADS=0
 
 WORKDIR /app
 
-ENV UV_HTTP_TIMEOUT=300
-ENV UV_LINK_MODE=copy
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc pkg-config libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --chown=appuser:appgroup pyproject.toml uv.lock /app/
+COPY pyproject.toml uv.lock README.md LICENSE ./
+COPY meilisync ./meilisync
 
-RUN uv sync --no-install-project --extra postgres
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --extra all --no-editable
 
-COPY --chown=appuser:appgroup . /app
+FROM python:3.13-slim-bookworm AS runtime
 
-RUN uv sync
+RUN groupadd --system --gid 1000 appgroup \
+    && useradd --system --uid 1000 --gid 1000 --home-dir /home/appuser --create-home appuser
 
-EXPOSE 8000
+WORKDIR /app
 
-CMD ["uv", "run", "meilisync", "start"]
+RUN mkdir -p /app/data \
+    && chown -R appuser:appgroup /app
+
+COPY --from=builder --chown=appuser:appgroup /app/.venv /app/.venv
+COPY --chown=appuser:appgroup config.example.yml /app/config.example.yml
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+USER appuser
+
+CMD ["meilisync", "start"]

@@ -1,8 +1,11 @@
 import asyncio
 
-import asyncmy
-
+import pytest
 from conftest import client
+
+asyncmy = pytest.importorskip("asyncmy")
+
+pytestmark = pytest.mark.integration
 
 index = client.index("mysql")
 

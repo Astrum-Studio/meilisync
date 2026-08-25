@@ -1,8 +1,11 @@
 import asyncio
 
-import motor.motor_asyncio
-
+import pytest
 from conftest import client
+
+motor = pytest.importorskip("motor")
+
+pytestmark = pytest.mark.integration
 
 index = client.index("mongo")
 

@@ -8,8 +8,7 @@ from typing import Any, List, Optional
 try:
     import psycopg2
     import psycopg2.errors
-    from psycopg2._psycopg import ReplicationMessage
-    from psycopg2.extras import LogicalReplicationConnection
+    from psycopg2.extras import LogicalReplicationConnection, RealDictCursor, RealDictRow
 except ImportError as e:
     raise ImportError("psycopg2 is not installed to use PostgreSQL source") from e
 
@@ -29,7 +28,7 @@ RECONNECT_MIN_DELAY = 1
 RECONNECT_MAX_DELAY = 30
 
 
-class CustomDictRow(psycopg2.extras.RealDictRow):
+class CustomDictRow(RealDictRow):
     def __getitem__(self, key):
         try:
             return super().__getitem__(key)
@@ -39,7 +38,7 @@ class CustomDictRow(psycopg2.extras.RealDictRow):
             raise exc
 
 
-class CustomDictCursor(psycopg2.extras.RealDictCursor):
+class CustomDictCursor(RealDictCursor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         kwargs["row_factory"] = CustomDictRow
@@ -66,9 +65,7 @@ class Postgres(Source):
     ):
         super().__init__(progress, tables, **kwargs)
         self._stop_event = threading.Event()
-        self.start_lsn: Optional[str] = (
-            self.progress["start_lsn"] if self.progress else None
-        )
+        self.start_lsn: Optional[str] = self.progress["start_lsn"] if self.progress else None
         self._connect()
 
     # ------------------------------------------------------------------
@@ -76,9 +73,7 @@ class Postgres(Source):
     # ------------------------------------------------------------------
     def _connect(self):
         """Create a fresh pair of connections (replication + regular)."""
-        self.conn = psycopg2.connect(
-            **self.kwargs, connection_factory=LogicalReplicationConnection
-        )
+        self.conn = psycopg2.connect(**self.kwargs, connection_factory=LogicalReplicationConnection)
         self.cursor = self.conn.cursor()
         if self.start_lsn is None:
             self.cursor.execute("SELECT pg_current_wal_lsn()")
@@ -175,7 +170,7 @@ class Postgres(Source):
             values[name] = value
         return values
 
-    def _consumer(self, msg: ReplicationMessage):
+    def _consumer(self, msg: Any):
         """
         Handle one wal2json format-version 2 message.
 
@@ -211,9 +206,7 @@ class Postgres(Source):
             values = self._columns_to_dict(change.get("columns"))
             event_type = EventType.update
         elif action == "D":
-            values = self._columns_to_dict(
-                change.get("columns") or change.get("identity")
-            )
+            values = self._columns_to_dict(change.get("columns") or change.get("identity"))
             event_type = EventType.delete
         elif action == "I":
             values = self._columns_to_dict(change.get("columns"))
@@ -302,8 +295,7 @@ class Postgres(Source):
                     break
                 except Exception as e:
                     logger.error(
-                        f'Failed to reconnect to PostgreSQL: "{e}", '
-                        f"retrying in {delay} seconds..."
+                        f'Failed to reconnect to PostgreSQL: "{e}", retrying in {delay} seconds...'
                     )
                     delay = min(delay * 2, RECONNECT_MAX_DELAY)
 
@@ -316,9 +308,7 @@ class Postgres(Source):
         except psycopg2.errors.DuplicateObject:  # type: ignore
             pass
         self._start_replication()
-        asyncio.ensure_future(
-            self._loop.run_in_executor(None, self._consume_stream)
-        )
+        asyncio.ensure_future(self._loop.run_in_executor(None, self._consume_stream))
         yield ProgressEvent(
             progress={"start_lsn": self.start_lsn},
         )

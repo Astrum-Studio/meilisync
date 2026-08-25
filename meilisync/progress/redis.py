@@ -1,3 +1,5 @@
+from typing import Any
+
 import redis.asyncio as redis
 
 from meilisync.enums import ProgressType
@@ -14,10 +16,11 @@ class Redis(Progress):
     ):
         super().__init__(dsn=dsn, key=key)
         self.key = key
-        self.redis = redis.from_url(dsn, decode_responses=True)
+        self.redis: Any = redis.from_url(dsn, decode_responses=True)
 
     async def set(self, **kwargs):
-        await self.redis.hmset(self.key, kwargs)
+        mapping = {str(key): str(value) for key, value in kwargs.items()}
+        await self.redis.hset(self.key, mapping=mapping)
 
     async def get(self):
         return await self.redis.hgetall(self.key)

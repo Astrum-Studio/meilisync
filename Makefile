@@ -1,17 +1,37 @@
-checkfiles = meilisync/ tests/ conftest.py
-py_warn = PYTHONDEVMODE=1
+.PHONY: install lint format typecheck test test-all build docs docs-serve ci pre-commit
 
-style:
-	@ruff format $(checkfiles)
-	@ruff check $(checkfiles) --fix
+install:
+	uv sync --all-extras --group dev --group docs
+	uv run pre-commit install
 
-check:
-	@ty check $(checkfiles)
+pre-commit:
+	uv run pre-commit install
+	uv run pre-commit run --all-files
+
+lint:
+	uv run --all-extras ruff check meilisync tests conftest.py
+	uv run --all-extras ruff format --check meilisync tests conftest.py
+
+format:
+	uv run --all-extras ruff format meilisync tests conftest.py
+	uv run --all-extras ruff check meilisync tests conftest.py --fix
+
+typecheck:
+	uv run --all-extras ty check meilisync tests conftest.py
 
 test:
-	$(py_warn) pytest --suppress-no-test-exit-code
+	PYTHONDEVMODE=1 uv run --all-extras pytest -m "not integration"
 
-ci: check test
+test-all:
+	PYTHONDEVMODE=1 uv run --all-extras pytest
 
 build:
-	@poetry build
+	uv build
+
+docs:
+	uv run mkdocs build --strict
+
+docs-serve:
+	uv run mkdocs serve
+
+ci: lint typecheck test

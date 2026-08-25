@@ -1,34 +1,35 @@
-debug: true
+debug: false
 
-# Where to store the current progress of the synchronization
+# CDC cursor: file or redis
 progress:
   type: file
+  path: data/progress.json
 
-# Source connection settings (PostgreSQL)
+# Source: postgres | mysql | mongo
 source:
   type: postgres
-  host: localhost
+  host: 127.0.0.1
   port: 5432
   user: postgres
   password: "postgres"
   database: postgres
 
-# Meilisearch connection settings
 meilisearch:
-  api_url: http://localhost:7700
-  api_key: "meilisearch_api_key"
-  insert_size: 1000        # Maximum batch size for sending
-  insert_interval: 5       # Interval for sending batches in seconds
+  api_url: http://127.0.0.1:7700
+  api_key: "MASTER_KEY"
+  insert_size: 1000
+  insert_interval: 5
 
-# Synchronization rules for tables
 sync:
   - table: table_name
     index: index_name
-    full: true
     pk: id
-
+    full: true
     fields:
-      field_name:
+      id:
+      title:
 
-# Sentry settings
-sentry:
+# Optional
+# sentry:
+#   dsn: ""
+#   environment: production
