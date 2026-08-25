@@ -1,0 +1,7 @@
+services:
+  meilisync:
+    container_name: meilisync
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always

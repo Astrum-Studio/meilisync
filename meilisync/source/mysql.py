@@ -1,16 +1,18 @@
 import asyncio
 from typing import List
 
-import asyncmy
-from asyncmy.cursors import DictCursor
-from asyncmy.errors import OperationalError
-from asyncmy.replication import BinLogStream
-from asyncmy.replication.row_events import (
-    DeleteRowsEvent,
-    UpdateRowsEvent,
-    WriteRowsEvent,
-)
-from loguru import logger
+try:    
+    import asyncmy
+    from asyncmy.cursors import DictCursor
+    from asyncmy.errors import OperationalError
+    from asyncmy.replication import BinLogStream
+    from asyncmy.replication.row_events import (
+        DeleteRowsEvent,
+        UpdateRowsEvent,
+        WriteRowsEvent,
+    )
+except ImportError as e:
+    raise ImportError("asyncmy is not installed to use MySQL source") from e
 
 from meilisync.enums import EventType, SourceType
 from meilisync.schemas import Event, ProgressEvent

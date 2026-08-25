@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 from pydantic_settings import BaseSettings
 
 from meilisync.enums import ProgressType, SourceType
@@ -69,7 +69,7 @@ class Settings(BaseSettings, BasePlugin):
     source: Source
     meilisearch: MeiliSearch
     sync: List[Sync]
-    sentry: Sentry | None = None
+    sentry: Sentry | None = Field(default_factory=Sentry)
 
     @property
     def tables(self):

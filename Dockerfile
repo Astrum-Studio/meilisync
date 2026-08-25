@@ -1,16 +1,32 @@
-FROM python:3.13 as builder
-ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
-RUN mkdir -p /meilisync
-WORKDIR /meilisync
-COPY pyproject.toml poetry.lock /meilisync/
-ENV POETRY_VIRTUALENVS_CREATE false
-RUN pip3 install poetry && poetry install --no-root -E mysql -E postgres
-COPY . /meilisync
-RUN poetry install -E all
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 
-FROM python:3.13-slim
-WORKDIR /meilisync
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=builder /usr/local/bin/ /usr/local/bin/
-COPY --from=builder /meilisync /meilisync
-CMD ["meilisync", "start"]
+RUN groupadd --system --gid 1000 appgroup && \
+    useradd --system --uid 1000 --gid 1000 --home-dir /home/appuser --create-home appuser
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      curl \
+      ca-certificates \
+      gcc \
+      pkg-config \
+      libffi-dev \
+      make; \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+ENV UV_HTTP_TIMEOUT=300
+ENV UV_LINK_MODE=copy
+
+COPY --chown=appuser:appgroup pyproject.toml uv.lock /app/
+
+RUN uv sync --no-install-project --extra postgres
+
+COPY --chown=appuser:appgroup . /app
+
+RUN uv sync
+
+EXPOSE 8000
+
+CMD ["uv", "run", "meilisync", "start"]

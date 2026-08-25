@@ -10,8 +10,6 @@
 
 Realtime sync data from MySQL/PostgreSQL/MongoDB to Meilisearch.
 
-There is also a web admin dashboard for meilisync [meilisync-admin](https://github.com/long2ice/meilisync-admin).
-
 ## Install
 
 Install from pypi:

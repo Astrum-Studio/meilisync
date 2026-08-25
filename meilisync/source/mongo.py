@@ -1,6 +1,9 @@
 from typing import List
 
-import motor.motor_asyncio
+try:
+    import motor.motor_asyncio
+except ImportError as e:
+    raise ImportError("motor is not installed to use Mongo source") from e
 
 from meilisync.enums import EventType, SourceType
 from meilisync.schemas import Event

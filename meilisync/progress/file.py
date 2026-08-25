@@ -25,5 +25,7 @@ class File(Progress):
         try:
             async with aiofiles.open(self.path) as f:
                 return json.loads(await f.read())
+        except json.JSONDecodeError:
+            return None
         except FileNotFoundError:
             return None

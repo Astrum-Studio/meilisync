@@ -1,0 +1,34 @@
+debug: true
+
+# Where to store the current progress of the synchronization
+progress:
+  type: file
+
+# Source connection settings (PostgreSQL)
+source:
+  type: postgres
+  host: localhost
+  port: 5432
+  user: postgres
+  password: "postgres"
+  database: postgres
+
+# Meilisearch connection settings
+meilisearch:
+  api_url: http://localhost:7700
+  api_key: "meilisearch_api_key"
+  insert_size: 1000        # Maximum batch size for sending
+  insert_interval: 5       # Interval for sending batches in seconds
+
+# Synchronization rules for tables
+sync:
+  - table: table_name
+    index: index_name
+    full: true
+    pk: id
+
+    fields:
+      field_name:
+
+# Sentry settings
+sentry:

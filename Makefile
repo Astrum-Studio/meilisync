@@ -6,7 +6,7 @@ style:
 	@ruff check $(checkfiles) --fix
 
 check:
-	@mypy $(checkfiles)
+	@ty check $(checkfiles)
 
 test:
 	$(py_warn) pytest --suppress-no-test-exit-code
