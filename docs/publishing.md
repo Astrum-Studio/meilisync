@@ -8,7 +8,7 @@ Releases are driven by Git tags. CI builds the sdist/wheel with **uv + hatchling
 
 Repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
-After the first successful `docs` workflow on `dev` or `main`, the site is at:
+After the first successful `docs` workflow on `main`, the site is at:
 
 [https://astrum-studio.github.io/meilisync/](https://astrum-studio.github.io/meilisync/)
 
