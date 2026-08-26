@@ -10,9 +10,9 @@ ghcr.io/astrum-studio/meilisync:<tag>
 
 | Tag | When it is published |
 | --- | --- |
-| `latest` | Git tags `vX.Y.Z` (releases) |
-| `0.1.5`, `0.1`, `0` | Semver from the same Git tag |
-| `dev`, `main` | Branch builds |
+| `latest` | Push to `main`, and git tags `vX.Y.Z` |
+| `0.1.5`, `0.1`, `0` | Git tags `vX.Y.Z` |
+| `dev` | Push to `dev` |
 | `sha-<git sha>` | Every successful image build |
 
 Pull the latest release:
